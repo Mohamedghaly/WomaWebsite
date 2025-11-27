@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Product, CartItem, Order, StoreContextType } from '../types';
+import { Product, CartItem, Order, StoreContextType, ProductVariant } from '../types';
 import * as Storage from '../services/storage';
 import { fetchShopifyProducts, createShopifyCheckout } from '../services/shopify';
 
@@ -44,23 +44,32 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   };
 
-  const addToCart = (product: Product, size: string) => {
+  const addToCart = (product: Product, variant: ProductVariant, quantity: number = 1) => {
     setCart((prev) => {
-      const existing = prev.find((item) => item.id === product.id && item.size === size);
+      // Check if this specific variant is already in cart
+      const existing = prev.find((item) => item.variantId === variant.id);
+      
       if (existing) {
         return prev.map((item) =>
-          item.id === product.id && item.size === size
-            ? { ...item, quantity: item.quantity + 1 }
+          item.variantId === variant.id
+            ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       }
-      return [...prev, { ...product, quantity: 1, size }];
+      
+      return [...prev, { 
+        ...product, 
+        quantity: quantity, 
+        variantId: variant.id, 
+        variantTitle: variant.title,
+        variantPrice: variant.price
+      }];
     });
     setIsCartOpen(true);
   };
 
-  const removeFromCart = (productId: string, size: string) => {
-    setCart((prev) => prev.filter((item) => !(item.id === productId && item.size === size)));
+  const removeFromCart = (variantId: string) => {
+    setCart((prev) => prev.filter((item) => item.variantId !== variantId));
   };
 
   const clearCart = () => setCart([]);
@@ -70,9 +79,6 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const placeOrder = async (customer: { name: string; email: string }) => {
     if (isShopifyConnected) {
        // In a real Headless app, we redirect to Shopify Web Checkout here.
-       // Note: This requires valid Variant IDs. 
-       // For this demo, we will simulate the "Action" but fallback to local order creation 
-       // so the UI doesn't break if the ID mapping isn't perfect.
        const checkoutUrl = await createShopifyCheckout(cart);
        if (checkoutUrl) {
          window.location.href = checkoutUrl;
@@ -86,7 +92,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       customerName: customer.name,
       customerEmail: customer.email,
       items: [...cart],
-      total: cart.reduce((acc, item) => acc + item.price * item.quantity, 0),
+      total: cart.reduce((acc, item) => acc + item.variantPrice * item.quantity, 0),
       status: 'pending',
       date: new Date().toISOString(),
     };

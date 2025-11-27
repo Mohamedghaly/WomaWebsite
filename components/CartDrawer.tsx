@@ -9,7 +9,7 @@ const CartDrawer: React.FC = () => {
 
   if (!isCartOpen) return null;
 
-  const total = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const total = cart.reduce((acc, item) => acc + item.variantPrice * item.quantity, 0);
 
   const handleCheckout = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,17 +47,17 @@ const CartDrawer: React.FC = () => {
             </div>
           ) : (
             cart.map((item, idx) => (
-              <div key={`${item.id}-${item.size}-${idx}`} className="flex gap-4">
+              <div key={`${item.variantId}-${idx}`} className="flex gap-4">
                 <img src={item.image} alt={item.name} className="w-20 h-24 object-cover bg-gray-100" />
                 <div className="flex-1 flex flex-col justify-between">
                   <div>
                     <h3 className="font-bold text-sm uppercase leading-tight">{item.name}</h3>
-                    <p className="text-xs text-gray-500 mt-1">Size: {item.size} | {item.category}</p>
+                    <p className="text-xs text-gray-500 mt-1">{item.variantTitle} | {item.category}</p>
                   </div>
                   <div className="flex items-center justify-between mt-2">
-                    <span className="font-mono text-sm">${item.price}</span>
+                    <span className="font-mono text-sm">EGP {item.variantPrice}</span>
                     <button 
-                      onClick={() => removeFromCart(item.id, item.size)}
+                      onClick={() => removeFromCart(item.variantId)}
                       className="text-[10px] uppercase underline text-gray-500 hover:text-red-500"
                     >
                       Remove
@@ -74,7 +74,7 @@ const CartDrawer: React.FC = () => {
           <div className="p-6 border-t border-gray-100 bg-gray-50">
             <div className="flex justify-between items-center mb-6 text-lg font-black uppercase">
               <span>Total</span>
-              <span>${total.toFixed(2)}</span>
+              <span>EGP {total.toFixed(2)}</span>
             </div>
             
             {!isCheckingOut ? (

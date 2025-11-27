@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../contexts/StoreContext';
-import { Product } from '../types';
-import { X, Plus, Filter } from 'lucide-react';
-
-const SIZES = ['S', 'M', 'L', 'XL'];
+import { Product, ProductVariant } from '../types';
+import { X, Plus, Filter, Minus } from 'lucide-react';
 
 const Shop: React.FC = () => {
   const { products, addToCart } = useStore();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [selectedSize, setSelectedSize] = useState<string>('M');
+  
+  // State to track selected options (e.g., { "Size": "M", "Color": "Blue" })
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
+  const [currentVariant, setCurrentVariant] = useState<ProductVariant | null>(null);
+  const [quantity, setQuantity] = useState(1);
+
   const [filterCategory, setFilterCategory] = useState<string>('All');
 
   const categories = ['All', ...Array.from(new Set(products.map(p => p.category)))];
@@ -19,10 +22,44 @@ const Shop: React.FC = () => {
 
   const openProduct = (product: Product) => {
     setSelectedProduct(product);
-    setSelectedSize('M');
+    setQuantity(1);
+    
+    // Initialize options with the first variant's options (default selection)
+    if (product.variants && product.variants.length > 0) {
+      const defaultOptions: Record<string, string> = {};
+      product.variants[0].selectedOptions.forEach(opt => {
+        defaultOptions[opt.name] = opt.value;
+      });
+      setSelectedOptions(defaultOptions);
+      setCurrentVariant(product.variants[0]);
+    } else {
+      setSelectedOptions({});
+      setCurrentVariant(null);
+    }
   };
 
   const closeProduct = () => setSelectedProduct(null);
+
+  const handleOptionChange = (optionName: string, value: string) => {
+    const newOptions = { ...selectedOptions, [optionName]: value };
+    setSelectedOptions(newOptions);
+
+    // Find the variant that matches all new options
+    if (selectedProduct?.variants) {
+        const match = selectedProduct.variants.find(v => {
+            return v.selectedOptions.every(opt => newOptions[opt.name] === opt.value);
+        });
+        setCurrentVariant(match || null);
+    }
+  };
+
+  const handleQuantityChange = (delta: number) => {
+    setQuantity(prev => Math.max(1, prev + delta));
+  };
+
+  // Safe fallback if variants are missing (shouldn't happen with correct API data)
+  const displayPrice = currentVariant ? currentVariant.price : selectedProduct?.price || 0;
+  const displayImage = currentVariant?.image || selectedProduct?.image || '';
 
   return (
     <div className="pt-8 pb-20 px-4 md:px-8 max-w-[1920px] mx-auto min-h-screen">
@@ -70,7 +107,7 @@ const Shop: React.FC = () => {
               <h3 className="font-bold text-sm uppercase tracking-wide group-hover:underline decoration-1 underline-offset-4">
                 {product.name}
               </h3>
-              <p className="text-gray-500 font-mono text-xs">${product.price}</p>
+              <p className="text-gray-500 font-mono text-xs">EGP {product.price}</p>
             </div>
           </div>
         ))}
@@ -89,9 +126,9 @@ const Shop: React.FC = () => {
                 <X size={24} />
             </button>
 
-            {/* Image Side */}
+            {/* Image Side - Updates based on Variant Selection if variant has an image */}
             <div className="w-full md:w-1/2 h-[50vh] md:h-[700px]">
-              <img src={selectedProduct.image} alt={selectedProduct.name} className="w-full h-full object-cover" />
+              <img src={displayImage} alt={selectedProduct.name} className="w-full h-full object-cover" />
             </div>
 
             {/* Info Side */}
@@ -103,39 +140,116 @@ const Shop: React.FC = () => {
                    <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-none mb-4">
                        {selectedProduct.name}
                    </h2>
-                   <p className="text-2xl font-mono mb-8">${selectedProduct.price}</p>
+                   {/* Dynamic Price */}
+                   <p className="text-2xl font-mono mb-8">EGP {displayPrice}</p>
                    
                    <p className="text-sm leading-relaxed text-gray-600 mb-8 border-l-2 border-black pl-4">
                        {selectedProduct.description}
                    </p>
 
-                   {/* Size Selector */}
-                   <div className="mb-8">
-                       <span className="text-xs font-bold uppercase tracking-widest block mb-3">Select Size</span>
-                       <div className="flex gap-2">
-                           {SIZES.map(size => (
+                   {/* Dynamic Option Selectors (Size, Color, etc) */}
+                   {selectedProduct.options && selectedProduct.options.map((option) => (
+                     <div key={option.name} className="mb-6">
+                       <span className="text-xs font-bold uppercase tracking-widest block mb-3">{option.name}</span>
+                       <div className="flex flex-wrap gap-2">
+                           {option.values.map(val => {
+                             const isSelected = selectedOptions[option.name] === val;
+                             const isColor = option.name.toLowerCase() === 'color' || option.name.toLowerCase() === 'colour';
+
+                             if (isColor) {
+                               // Color Swatch Button
+                               return (
+                                 <button 
+                                     key={val}
+                                     onClick={() => handleOptionChange(option.name, val)}
+                                     title={val}
+                                     className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all ${
+                                         isSelected 
+                                          ? 'ring-2 ring-offset-2 ring-black border-transparent' 
+                                          : 'border-gray-200 hover:border-black'
+                                     }`}
+                                     style={{ backgroundColor: val.replace(/\s/g, '') }}
+                                 >
+                                    {/* Indicator for selected state, contrasting with background */}
+                                    {isSelected && (
+                                        <div className={`w-1.5 h-1.5 rounded-full ${
+                                            ['white', 'ivory', 'cream', 'yellow', 'beige'].some(c => val.toLowerCase().includes(c)) 
+                                            ? 'bg-black' 
+                                            : 'bg-white'
+                                        }`} />
+                                    )}
+                                 </button>
+                               );
+                             }
+
+                             return (
                                <button 
-                                   key={size}
-                                   onClick={() => setSelectedSize(size)}
-                                   className={`w-12 h-12 flex items-center justify-center border font-bold text-sm ${
-                                       selectedSize === size ? 'bg-black text-white border-black' : 'border-gray-200 hover:border-black'
+                                   key={val}
+                                   onClick={() => handleOptionChange(option.name, val)}
+                                   className={`min-w-[48px] px-4 h-12 flex items-center justify-center border font-bold text-sm transition-all ${
+                                       isSelected 
+                                        ? 'bg-black text-white border-black' 
+                                        : 'border-gray-200 hover:border-black text-gray-600'
                                    }`}
                                >
-                                   {size}
+                                   {val}
                                </button>
-                           ))}
+                             );
+                           })}
                        </div>
+                     </div>
+                   ))}
+
+                   {/* Quantity Selector */}
+                   <div className="mb-8">
+                        <span className="text-xs font-bold uppercase tracking-widest block mb-3">Quantity</span>
+                        <div className="flex items-center border border-gray-200 w-32">
+                            <button 
+                                onClick={() => handleQuantityChange(-1)}
+                                className="w-10 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors"
+                            >
+                                <Minus size={16} />
+                            </button>
+                            <div className="flex-1 h-12 flex items-center justify-center font-bold text-sm border-x border-gray-200">
+                                {quantity}
+                            </div>
+                            <button 
+                                onClick={() => handleQuantityChange(1)}
+                                className="w-10 h-12 flex items-center justify-center hover:bg-gray-100 transition-colors"
+                            >
+                                <Plus size={16} />
+                            </button>
+                        </div>
                    </div>
+
+                   {/* Variant Availability Warning */}
+                   {currentVariant && currentVariant.availableForSale === false && (
+                       <p className="text-red-500 text-xs font-bold uppercase mb-4">Sold Out</p>
+                   )}
+                   
+                   {/* Fallback if combination doesn't exist */}
+                   {!currentVariant && selectedProduct.variants && selectedProduct.variants.length > 0 && (
+                       <p className="text-red-500 text-xs font-bold uppercase mb-4">Unavailable Combination</p>
+                   )}
                </div>
 
                <button 
                    onClick={() => {
-                       addToCart(selectedProduct, selectedSize);
-                       closeProduct();
+                       if (currentVariant && currentVariant.availableForSale !== false) {
+                           addToCart(selectedProduct, currentVariant, quantity);
+                           closeProduct();
+                       }
                    }}
-                   className="w-full bg-black text-white py-4 font-bold uppercase tracking-widest hover:bg-gray-800 transition-colors"
+                   disabled={!currentVariant || currentVariant.availableForSale === false}
+                   className={`w-full py-4 font-bold uppercase tracking-widest transition-colors ${
+                       !currentVariant || currentVariant.availableForSale === false
+                       ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                       : 'bg-black text-white hover:bg-gray-800'
+                   }`}
                >
-                   Add To Cart - ${(selectedProduct.price).toFixed(2)}
+                   {currentVariant && currentVariant.availableForSale !== false 
+                    ? `Add To Cart - EGP ${(displayPrice * quantity).toFixed(2)}` 
+                    : 'Unavailable'}
                </button>
             </div>
           </div>

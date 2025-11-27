@@ -9,11 +9,6 @@ const Navbar: React.FC = () => {
 
   return (
     <>
-      {/* Promo Bar */}
-      <div className="bg-black text-white text-[10px] md:text-xs font-bold py-2 text-center uppercase tracking-widest">
-        Free Worldwide Shipping on Orders Over $200
-      </div>
-
       <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-[1920px] mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
           

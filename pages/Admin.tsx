@@ -274,7 +274,7 @@ const Admin: React.FC = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Price ($)</label>
+                                    <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Price (EGP)</label>
                                     <input 
                                         type="number"
                                         className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:outline-none transition-all"
@@ -372,7 +372,7 @@ const Admin: React.FC = () => {
                                                 </div>
                                             </div>
                                             <div className="font-mono text-xs font-bold">
-                                                ${p.price}
+                                                EGP {p.price}
                                             </div>
                                         </div>
                                     ))}
@@ -413,7 +413,7 @@ const Admin: React.FC = () => {
                                                 <div className="text-xs text-gray-500">{order.customerEmail}</div>
                                             </td>
                                             <td className="p-6 text-sm font-medium">{order.items.length} items</td>
-                                            <td className="p-6 font-mono text-sm font-bold">${order.total.toFixed(2)}</td>
+                                            <td className="p-6 font-mono text-sm font-bold">EGP {order.total.toFixed(2)}</td>
                                             <td className="p-6">
                                                 <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${
                                                     order.status === 'delivered' ? 'bg-green-50 text-green-700 border-green-200' :

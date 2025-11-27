@@ -5,7 +5,7 @@ const SHOPIFY_ACCESS_TOKEN = 'd80cefbc93c419d6711b2356be501808';
 
 async function shopifyFetch(query: string, variables = {}) {
   try {
-    const response = await fetch(`https://${SHOPIFY_DOMAIN}/api/2023-01/graphql.json`, {
+    const response = await fetch(`https://${SHOPIFY_DOMAIN}/api/2024-01/graphql.json`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -16,7 +16,7 @@ async function shopifyFetch(query: string, variables = {}) {
     
     const json = await response.json();
     if (json.errors) {
-      console.error('Shopify API Error:', json.errors);
+      console.error('Shopify API Error:', JSON.stringify(json.errors, null, 2));
       throw new Error(json.errors[0].message);
     }
     return json.data;
@@ -27,8 +27,6 @@ async function shopifyFetch(query: string, variables = {}) {
 }
 
 export const fetchShopifyProducts = async (): Promise<Product[]> => {
-  // We fetch variants(first: 1) to get the specific ID needed for Checkout.
-  // The Storefront API requires a Variant ID to create a checkout, not a Product ID.
   const query = `
     {
       products(first: 20) {
@@ -39,6 +37,13 @@ export const fetchShopifyProducts = async (): Promise<Product[]> => {
             handle
             description
             productType
+            collections(first: 1) {
+              edges {
+                node {
+                  title
+                }
+              }
+            }
             images(first: 1) {
               edges {
                 node {
@@ -46,13 +51,26 @@ export const fetchShopifyProducts = async (): Promise<Product[]> => {
                 }
               }
             }
-            variants(first: 1) {
+            options {
+              name
+              values
+            }
+            variants(first: 20) {
               edges {
                 node {
                   id
+                  title
                   price {
                     amount
                   }
+                  image {
+                    url
+                  }
+                  selectedOptions {
+                    name
+                    value
+                  }
+                  availableForSale
                 }
               }
             }
@@ -66,21 +84,32 @@ export const fetchShopifyProducts = async (): Promise<Product[]> => {
     const data = await shopifyFetch(query);
     return data.products.edges.map((edge: any) => {
       const node = edge.node;
-      const firstVariant = node.variants.edges[0]?.node;
       
-      // We use the Variant ID as the main 'id' for the app so that addToCart
-      // passes the correct ID to the checkout mutation later.
-      const price = firstVariant ? parseFloat(firstVariant.price.amount) : 0;
-      const variantId = firstVariant ? firstVariant.id : node.id;
+      const variants = node.variants.edges.map((vEdge: any) => ({
+        id: vEdge.node.id,
+        title: vEdge.node.title,
+        price: parseFloat(vEdge.node.price.amount),
+        image: vEdge.node.image?.url,
+        selectedOptions: vEdge.node.selectedOptions,
+        availableForSale: vEdge.node.availableForSale
+      }));
+
+      // Base price is usually the lowest price variant or the first one
+      const basePrice = variants.length > 0 ? variants[0].price : 0;
+
+      // Use productType, fallback to first collection, fallback to Uncategorized
+      const category = node.productType || node.collections?.edges[0]?.node?.title || 'Uncategorized';
 
       return {
-        id: variantId, 
+        id: node.id, 
         name: node.title,
-        price: price,
+        price: basePrice,
         image: node.images.edges[0]?.node.url || 'https://picsum.photos/seed/fashion/800/1000',
         description: node.description || 'No description available.',
-        category: node.productType || 'Uncategorized',
-        isNew: false 
+        category: category,
+        isNew: false,
+        options: node.options,
+        variants: variants
       };
     });
   } catch (e) {
@@ -90,18 +119,20 @@ export const fetchShopifyProducts = async (): Promise<Product[]> => {
 };
 
 export const createShopifyCheckout = async (cartItems: CartItem[]): Promise<string | null> => {
+  // Use cartCreate instead of legacy checkoutCreate
+  // Map variantId to merchandiseId for CartLineInput
   const lineItems = cartItems.map(item => ({
-    variantId: item.id, // This now holds the actual Shopify Variant ID
+    merchandiseId: item.variantId,
     quantity: item.quantity
   }));
   
   const mutation = `
-    mutation checkoutCreate($input: CheckoutCreateInput!) {
-      checkoutCreate(input: $input) {
-        checkout {
-          webUrl
+    mutation cartCreate($input: CartInput) {
+      cartCreate(input: $input) {
+        cart {
+          checkoutUrl
         }
-        checkoutUserErrors {
+        userErrors {
           message
           field
         }
@@ -111,19 +142,19 @@ export const createShopifyCheckout = async (cartItems: CartItem[]): Promise<stri
 
   const variables = {
     input: {
-      lineItems: lineItems
+      lines: lineItems
     }
   };
 
   try {
     const data = await shopifyFetch(mutation, variables);
     
-    if (data.checkoutCreate.checkoutUserErrors.length > 0) {
-      console.error("Checkout Errors:", data.checkoutCreate.checkoutUserErrors);
+    if (data.cartCreate.userErrors.length > 0) {
+      console.error("Checkout Errors:", data.cartCreate.userErrors);
       return null;
     }
 
-    return data.checkoutCreate.checkout.webUrl;
+    return data.cartCreate.cart.checkoutUrl;
   } catch (e) {
     console.error("Checkout creation failed", e);
     return null;

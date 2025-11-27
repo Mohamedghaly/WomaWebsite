@@ -1,3 +1,17 @@
+export interface ProductOption {
+  name: string;
+  values: string[];
+}
+
+export interface ProductVariant {
+  id: string;
+  title: string;
+  price: number;
+  image?: string;
+  selectedOptions: { name: string; value: string }[];
+  availableForSale?: boolean;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -6,11 +20,15 @@ export interface Product {
   description: string;
   category: string;
   isNew?: boolean;
+  options?: ProductOption[];
+  variants?: ProductVariant[];
 }
 
 export interface CartItem extends Product {
   quantity: number;
-  size: string;
+  variantId: string;
+  variantTitle: string;
+  variantPrice: number;
 }
 
 export interface Order {
@@ -28,8 +46,8 @@ export interface StoreContextType {
   cart: CartItem[];
   orders: Order[];
   addProduct: (product: Product) => void;
-  addToCart: (product: Product, size: string) => void;
-  removeFromCart: (productId: string, size: string) => void;
+  addToCart: (product: Product, variant: ProductVariant, quantity?: number) => void;
+  removeFromCart: (variantId: string) => void;
   clearCart: () => void;
   placeOrder: (customer: { name: string; email: string }) => void;
   updateOrderStatus: (orderId: string, status: Order['status']) => void;

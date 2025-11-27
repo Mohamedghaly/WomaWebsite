@@ -11,9 +11,10 @@ const Home: React.FC = () => {
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative h-[85vh] w-full bg-gray-100 overflow-hidden flex items-center justify-center">
-         {/* Background Image Placeholder */}
+         {/* Updated Banner Image */}
+         {/* REPLACE THE SRC BELOW WITH YOUR IMAGE URL */}
          <img 
-            src="https://images.unsplash.com/photo-1517466787929-bc90951d6dbb?q=80&w=1920&auto=format&fit=crop" 
+            src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1920&auto=format&fit=crop" 
             className="absolute inset-0 w-full h-full object-cover grayscale opacity-80"
             alt="Woma Sportswear Hero"
          />
@@ -76,7 +77,8 @@ const Home: React.FC = () => {
                 <h3 className="font-bold text-sm uppercase tracking-wide group-hover:underline decoration-1 underline-offset-4">
                   {product.name}
                 </h3>
-                <p className="text-gray-500 font-mono text-sm">${product.price}</p>
+                {/* Updated Currency to EGP */}
+                <p className="text-gray-500 font-mono text-sm">EGP {product.price}</p>
               </div>
              </Link>
           ))}
