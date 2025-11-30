@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Product, CartItem, Order, StoreContextType, ProductVariant } from '../types';
 import * as Storage from '../services/storage';
-import { fetchShopifyProducts, createShopifyCheckout } from '../services/shopify';
+import { fetchProducts, createCheckout } from '../services/api';
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
@@ -10,24 +10,24 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [orders, setOrders] = useState<Order[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isShopifyConnected, setIsShopifyConnected] = useState(false);
+  const [isBackendConnected, setIsBackendConnected] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
-      // 1. Try fetching from Shopify
-      const shopifyProducts = await fetchShopifyProducts();
+      // Try fetching from Django backend
+      const backendProducts = await fetchProducts();
       
-      if (shopifyProducts.length > 0) {
-        setProducts(shopifyProducts);
-        setIsShopifyConnected(true);
+      if (backendProducts.length > 0) {
+        setProducts(backendProducts);
+        setIsBackendConnected(true);
       } else {
-        // 2. Fallback to Local Mock Data
-        console.log("Using Local Storage (Shopify connection not configured or empty)");
+        // Fallback to Local Mock Data
+        console.log("Using Local Storage (Backend connection not configured or empty)");
         setProducts(Storage.getProducts());
-        setIsShopifyConnected(false);
+        setIsBackendConnected(false);
       }
       
-      // Orders are still local for the Admin Dashboard demo unless we build a full backend
+      // Orders are still local for now
       setOrders(Storage.getOrders());
     };
 
@@ -35,11 +35,10 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, []);
 
   const addProduct = (product: Product) => {
-    // Only allow adding to local state/storage. 
-    // Shopify Storefront API cannot write products.
+    // Only allow adding to local state/storage
     const updated = [product, ...products];
     setProducts(updated);
-    if (!isShopifyConnected) {
+    if (!isBackendConnected) {
       Storage.saveProducts(updated);
     }
   };
@@ -77,9 +76,9 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const toggleCart = () => setIsCartOpen(!isCartOpen);
 
   const placeOrder = async (customer: { name: string; email: string }) => {
-    if (isShopifyConnected) {
-       // In a real Headless app, we redirect to Shopify Web Checkout here.
-       const checkoutUrl = await createShopifyCheckout(cart);
+    if (isBackendConnected) {
+       // Try to create checkout via backend
+       const checkoutUrl = await createCheckout(cart);
        if (checkoutUrl) {
          window.location.href = checkoutUrl;
          return; 
