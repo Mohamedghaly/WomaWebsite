@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Product, CartItem, Order, StoreContextType, ProductVariant } from '../types';
 import * as Storage from '../services/storage';
-import { fetchProducts, createCheckout } from '../services/api';
+import { fetchProducts, createOrder } from '../services/api';
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
@@ -21,13 +21,20 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setProducts(backendProducts);
         setIsBackendConnected(true);
       } else {
-        // Fallback to Local Mock Data
-        console.log("Using Local Storage (Backend connection not configured or empty)");
-        setProducts(Storage.getProducts());
-        setIsBackendConnected(false);
+        // Fallback to Local Mock Data if backend is empty or fails
+        console.log("Using Local Storage (Backend returned no products)");
+        // You might want to remove this fallback in production if you want to show an empty store
+        // setProducts(Storage.getProducts());
+        // setIsBackendConnected(false);
+        
+        // For now, let's keep the fallback so the site isn't empty during development
+        const localProducts = Storage.getProducts();
+        if (localProducts.length > 0) {
+             setProducts(localProducts);
+        }
       }
       
-      // Orders are still local for now
+      // Orders are still local for the user's view unless we implement a user profile with order history
       setOrders(Storage.getOrders());
     };
 
@@ -36,6 +43,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const addProduct = (product: Product) => {
     // Only allow adding to local state/storage
+    // In a real app, this would be done via the Admin Dashboard
     const updated = [product, ...products];
     setProducts(updated);
     if (!isBackendConnected) {
@@ -76,16 +84,18 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const toggleCart = () => setIsCartOpen(!isCartOpen);
 
   const placeOrder = async (customer: { name: string; email: string }) => {
-    if (isBackendConnected) {
-       // Try to create checkout via backend
-       const checkoutUrl = await createCheckout(cart);
-       if (checkoutUrl) {
-         window.location.href = checkoutUrl;
-         return; 
-       }
+    try {
+        if (isBackendConnected) {
+           // Create order in backend
+           await createOrder(cart, customer);
+           // If successful, we can clear the cart and show success
+           // Note: In a real payment flow, we'd redirect to a payment URL returned by the backend
+        }
+    } catch (error) {
+        console.error("Failed to place order in backend, falling back to local", error);
     }
 
-    // Default / Fallback Local Order Logic
+    // Default / Fallback Local Order Logic (also used for UI feedback)
     const newOrder: Order = {
       id: Math.random().toString(36).substr(2, 9).toUpperCase(),
       customerName: customer.name,
