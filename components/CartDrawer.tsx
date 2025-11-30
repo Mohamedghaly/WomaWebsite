@@ -22,14 +22,14 @@ const CartDrawer: React.FC = () => {
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/30 backdrop-blur-sm"
         onClick={toggleCart}
       />
 
       {/* Drawer */}
       <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-[slideIn_0.3s_ease-out]">
-        
+
         {/* Header */}
         <div className="p-6 border-b border-gray-100 flex items-center justify-between">
           <h2 className="text-xl font-black uppercase tracking-tighter">Your Cart ({cart.length})</h2>
@@ -48,7 +48,12 @@ const CartDrawer: React.FC = () => {
           ) : (
             cart.map((item, idx) => (
               <div key={`${item.variantId}-${idx}`} className="flex gap-4">
-                <img src={item.image} alt={item.name} className="w-20 h-24 object-cover bg-gray-100" />
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop'; }}
+                  className="w-20 h-24 object-cover bg-gray-100"
+                />
                 <div className="flex-1 flex flex-col justify-between">
                   <div>
                     <h3 className="font-bold text-sm uppercase leading-tight">{item.name}</h3>
@@ -56,7 +61,7 @@ const CartDrawer: React.FC = () => {
                   </div>
                   <div className="flex items-center justify-between mt-2">
                     <span className="font-mono text-sm">EGP {item.variantPrice}</span>
-                    <button 
+                    <button
                       onClick={() => removeFromCart(item.variantId)}
                       className="text-[10px] uppercase underline text-gray-500 hover:text-red-500"
                     >
@@ -76,9 +81,9 @@ const CartDrawer: React.FC = () => {
               <span>Total</span>
               <span>EGP {total.toFixed(2)}</span>
             </div>
-            
+
             {!isCheckingOut ? (
-              <button 
+              <button
                 onClick={() => setIsCheckingOut(true)}
                 className="w-full bg-black text-white py-4 font-bold uppercase tracking-widest hover:bg-gray-900 transition-colors"
               >
@@ -86,31 +91,31 @@ const CartDrawer: React.FC = () => {
               </button>
             ) : (
               <form onSubmit={handleCheckout} className="space-y-4 animate-[fadeIn_0.3s_ease]">
-                <input 
-                  type="text" 
-                  placeholder="Full Name" 
+                <input
+                  type="text"
+                  placeholder="Full Name"
                   required
                   value={formData.name}
-                  onChange={e => setFormData({...formData, name: e.target.value})}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
                   className="w-full p-3 border border-gray-300 focus:outline-none focus:border-black text-sm"
                 />
-                <input 
-                  type="email" 
-                  placeholder="Email Address" 
+                <input
+                  type="email"
+                  placeholder="Email Address"
                   required
                   value={formData.email}
-                  onChange={e => setFormData({...formData, email: e.target.value})}
+                  onChange={e => setFormData({ ...formData, email: e.target.value })}
                   className="w-full p-3 border border-gray-300 focus:outline-none focus:border-black text-sm"
                 />
                 <div className="flex gap-2">
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setIsCheckingOut(false)}
                     className="w-1/2 border border-black py-3 font-bold uppercase text-xs"
                   >
                     Back
                   </button>
-                  <button 
+                  <button
                     type="submit"
                     className="w-1/2 bg-black text-white py-3 font-bold uppercase text-xs"
                   >
