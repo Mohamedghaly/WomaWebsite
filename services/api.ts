@@ -41,8 +41,8 @@ class APIClient {
     return this.request('/products/');
   }
 
-  async getProduct(id: string): Promise<any> {
-    return this.request(`/products/${id}/`);
+  async getProduct(idOrSlug: string): Promise<any> {
+    return this.request(`/products/${idOrSlug}/`);
   }
 
   // Categories
@@ -50,7 +50,7 @@ class APIClient {
     return this.request('/categories/');
   }
 
-  // Orders (you'll need to implement this endpoint in your backend)
+  // Orders
   async createOrder(orderData: any): Promise<any> {
     return this.request('/orders/', {
       method: 'POST',
@@ -64,28 +64,45 @@ export const apiClient = new APIClient(API_BASE_URL);
 // Fetch products from Django backend
 export const fetchProducts = async (): Promise<Product[]> => {
   try {
+    // 1. Get the list of products
     const response = await apiClient.getProducts();
-    const products = response.results || response;
+    const productList = response.results || response;
 
-    if (!products || products.length === 0) {
+    if (!productList || productList.length === 0) {
       console.log('No products found in backend');
       return [];
     }
 
-    return products.map((product: any) => {
-      // Handle variations if they exist
+    // 2. Fetch full details for each product to get variations
+    // We use Promise.all to fetch them in parallel
+    const detailedProducts = await Promise.all(
+      productList.map(async (item: any) => {
+        try {
+          // Use slug if available, otherwise ID
+          const identifier = item.slug || item.id;
+          return await apiClient.getProduct(identifier);
+        } catch (e) {
+          console.warn(`Failed to fetch details for product ${item.name}`, e);
+          return item; // Fallback to list item data
+        }
+      })
+    );
+
+    // 3. Map the detailed data to our frontend model
+    return detailedProducts.map((product: any) => {
+      // Handle variations
       const variations = product.variations || [];
       
       // Create variants from variations
       const variants = variations.map((variation: any) => ({
         id: variation.id?.toString() || variation.sku,
-        title: variation.name || `${variation.color || ''} ${variation.size || ''}`.trim(),
+        title: variation.name || variation.display_name || `${variation.attributes_display || 'Variant'}`,
         price: parseFloat(variation.final_price || variation.price_adjustment || product.price),
         image: variation.images?.[0]?.image_url || product.image_url,
-        selectedOptions: [
-          ...(variation.color ? [{ name: 'Color', value: variation.color }] : []),
-          ...(variation.size ? [{ name: 'Size', value: variation.size }] : []),
-        ],
+        selectedOptions: Object.entries(variation.attributes || {}).map(([name, value]) => ({
+            name,
+            value: String(value)
+        })),
         availableForSale: (variation.stock_quantity || 0) > 0,
       }));
 
@@ -103,14 +120,26 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
       // Extract unique options from variations
       const options: any[] = [];
-      const colors = [...new Set(variations.map((v: any) => v.color).filter(Boolean))];
-      const sizes = [...new Set(variations.map((v: any) => v.size).filter(Boolean))];
-      
-      if (colors.length > 0) {
-        options.push({ name: 'Color', values: colors });
-      }
-      if (sizes.length > 0) {
-        options.push({ name: 'Size', values: sizes });
+      if (variations.length > 0) {
+          // Get all attribute keys
+          const allKeys = new Set<string>();
+          variations.forEach((v: any) => {
+              if (v.attributes) {
+                  Object.keys(v.attributes).forEach(k => allKeys.add(k));
+              }
+          });
+
+          allKeys.forEach(key => {
+              const values = new Set<string>();
+              variations.forEach((v: any) => {
+                  if (v.attributes && v.attributes[key]) {
+                      values.add(String(v.attributes[key]));
+                  }
+              });
+              if (values.size > 0) {
+                  options.push({ name: key, values: Array.from(values) });
+              }
+          });
       }
 
       return {
@@ -150,8 +179,8 @@ export const createOrder = async (cartItems: CartItem[], customer: { name: strin
       customer_name: customer.name,
       customer_email: customer.email,
       items: cartItems.map(item => ({
-        product_id: item.id,
-        variation_id: item.variantId !== 'default' ? item.variantId : null,
+        product_id: item.id, // This might need to be the UUID if backend expects UUID
+        variation_id: item.variantId !== 'default' && !item.variantId.includes('default') ? item.variantId : null,
         quantity: item.quantity,
         price: item.variantPrice,
       })),
@@ -168,12 +197,5 @@ export const createOrder = async (cartItems: CartItem[], customer: { name: strin
 
 // Legacy function for compatibility
 export const createCheckout = async (cartItems: CartItem[]): Promise<string | null> => {
-  try {
-    // For now, return null - orders will be created via placeOrder in StoreContext
-    console.log('Checkout with items:', cartItems);
-    return null;
-  } catch (error) {
-    console.error('Checkout creation failed:', error);
-    return null;
-  }
+  return null;
 };
