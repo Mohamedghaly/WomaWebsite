@@ -13,7 +13,7 @@ class APIClient {
 
   private async request(endpoint: string, options: RequestInit = {}) {
     const url = `${this.baseURL}${endpoint}`;
-    
+
     try {
       const response = await fetch(url, {
         ...options,
@@ -92,7 +92,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
     return detailedProducts.map((product: any) => {
       // Handle variations
       const variations = product.variations || [];
-      
+
       // Create variants from variations
       const variants = variations.map((variation: any) => ({
         id: variation.id?.toString() || variation.sku,
@@ -100,8 +100,8 @@ export const fetchProducts = async (): Promise<Product[]> => {
         price: parseFloat(variation.final_price || variation.price_adjustment || product.price),
         image: variation.images?.[0]?.image_url || product.image_url,
         selectedOptions: Object.entries(variation.attributes || {}).map(([name, value]) => ({
-            name,
-            value: String(value)
+          name,
+          value: String(value)
         })),
         availableForSale: (variation.stock_quantity || 0) > 0,
       }));
@@ -121,25 +121,25 @@ export const fetchProducts = async (): Promise<Product[]> => {
       // Extract unique options from variations
       const options: any[] = [];
       if (variations.length > 0) {
-          // Get all attribute keys
-          const allKeys = new Set<string>();
-          variations.forEach((v: any) => {
-              if (v.attributes) {
-                  Object.keys(v.attributes).forEach(k => allKeys.add(k));
-              }
-          });
+        // Get all attribute keys
+        const allKeys = new Set<string>();
+        variations.forEach((v: any) => {
+          if (v.attributes) {
+            Object.keys(v.attributes).forEach(k => allKeys.add(k));
+          }
+        });
 
-          allKeys.forEach(key => {
-              const values = new Set<string>();
-              variations.forEach((v: any) => {
-                  if (v.attributes && v.attributes[key]) {
-                      values.add(String(v.attributes[key]));
-                  }
-              });
-              if (values.size > 0) {
-                  options.push({ name: key, values: Array.from(values) });
-              }
+        allKeys.forEach(key => {
+          const values = new Set<string>();
+          variations.forEach((v: any) => {
+            if (v.attributes && v.attributes[key]) {
+              values.add(String(v.attributes[key]));
+            }
           });
+          if (values.size > 0) {
+            options.push({ name: key, values: Array.from(values) });
+          }
+        });
       }
 
       return {
@@ -172,12 +172,13 @@ export const fetchCategories = async (): Promise<any[]> => {
 };
 
 // Create order in Django backend
-export const createOrder = async (cartItems: CartItem[], customer: { name: string; email: string }): Promise<any> => {
+export const createOrder = async (cartItems: CartItem[], customer: { name: string; email: string; address: string }): Promise<any> => {
   try {
     // Transform cart items to match your backend's expected format
     const orderData = {
       customer_name: customer.name,
       customer_email: customer.email,
+      shipping_address: customer.address,
       items: cartItems.map(item => ({
         product_id: item.id, // This might need to be the UUID if backend expects UUID
         variation_id: item.variantId !== 'default' && !item.variantId.includes('default') ? item.variantId : null,

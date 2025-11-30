@@ -16,7 +16,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const loadData = async () => {
       // Try fetching from Django backend
       const backendProducts = await fetchProducts();
-      
+
       if (backendProducts.length > 0) {
         setProducts(backendProducts);
         setIsBackendConnected(true);
@@ -26,14 +26,14 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         // You might want to remove this fallback in production if you want to show an empty store
         // setProducts(Storage.getProducts());
         // setIsBackendConnected(false);
-        
+
         // For now, let's keep the fallback so the site isn't empty during development
         const localProducts = Storage.getProducts();
         if (localProducts.length > 0) {
-             setProducts(localProducts);
+          setProducts(localProducts);
         }
       }
-      
+
       // Orders are still local for the user's view unless we implement a user profile with order history
       setOrders(Storage.getOrders());
     };
@@ -55,7 +55,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setCart((prev) => {
       // Check if this specific variant is already in cart
       const existing = prev.find((item) => item.variantId === variant.id);
-      
+
       if (existing) {
         return prev.map((item) =>
           item.variantId === variant.id
@@ -63,11 +63,11 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             : item
         );
       }
-      
-      return [...prev, { 
-        ...product, 
-        quantity: quantity, 
-        variantId: variant.id, 
+
+      return [...prev, {
+        ...product,
+        quantity: quantity,
+        variantId: variant.id,
         variantTitle: variant.title,
         variantPrice: variant.price
       }];
@@ -83,16 +83,16 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const toggleCart = () => setIsCartOpen(!isCartOpen);
 
-  const placeOrder = async (customer: { name: string; email: string }) => {
+  const placeOrder = async (customer: { name: string; email: string; address: string }) => {
     try {
-        if (isBackendConnected) {
-           // Create order in backend
-           await createOrder(cart, customer);
-           // If successful, we can clear the cart and show success
-           // Note: In a real payment flow, we'd redirect to a payment URL returned by the backend
-        }
+      if (isBackendConnected) {
+        // Create order in backend
+        await createOrder(cart, customer);
+        // If successful, we can clear the cart and show success
+        // Note: In a real payment flow, we'd redirect to a payment URL returned by the backend
+      }
     } catch (error) {
-        console.error("Failed to place order in backend, falling back to local", error);
+      console.error("Failed to place order in backend, falling back to local", error);
     }
 
     // Default / Fallback Local Order Logic (also used for UI feedback)
