@@ -10,6 +10,8 @@ export interface ProductVariant {
   image?: string;
   selectedOptions: { name: string; value: string }[];
   availableForSale?: boolean;
+  stock_quantity?: number;
+  color?: string;
 }
 
 export interface Product {
@@ -35,6 +37,7 @@ export interface Order {
   id: string;
   customerName: string;
   customerEmail: string;
+  customerPhone?: string;
   items: CartItem[];
   total: number;
   status: 'pending' | 'shipped' | 'delivered';
@@ -49,7 +52,7 @@ export interface StoreContextType {
   addToCart: (product: Product, variant: ProductVariant, quantity?: number) => void;
   removeFromCart: (variantId: string) => void;
   clearCart: () => void;
-  placeOrder: (customer: { name: string; email: string; address: string }) => void;
+  placeOrder: (customer: { name: string; email: string; phone: string; address: string }) => Promise<void>;
   updateOrderStatus: (orderId: string, status: Order['status']) => void;
   isCartOpen: boolean;
   toggleCart: () => void;

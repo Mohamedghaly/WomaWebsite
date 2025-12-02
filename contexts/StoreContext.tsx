@@ -14,22 +14,29 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   useEffect(() => {
     const loadData = async () => {
-      // Try fetching from Django backend
-      const backendProducts = await fetchProducts();
+      console.log('🔍 Fetching products from backend...');
+      console.log('📡 API URL:', import.meta.env.VITE_API_URL || 'https://warm-hippopotamus-ghaly-fafb8bcd.koyeb.app/api/v1');
 
-      if (backendProducts.length > 0) {
+      // Try fetching from Django backend
+      try {
+        const backendProducts = await fetchProducts();
+        console.log('📦 Backend products received:', backendProducts.length, 'products');
+
+        // If we successfully fetched (even if empty), use backend data
+        // This prevents showing old local mock data when we actually have a fresh empty database
         setProducts(backendProducts);
         setIsBackendConnected(true);
-      } else {
-        // Fallback to Local Mock Data if backend is empty or fails
-        console.log("Using Local Storage (Backend returned no products)");
-        // You might want to remove this fallback in production if you want to show an empty store
-        // setProducts(Storage.getProducts());
-        // setIsBackendConnected(false);
 
-        // For now, let's keep the fallback so the site isn't empty during development
+        if (backendProducts.length === 0) {
+          console.warn('⚠️ Backend connected but returned 0 products. Add products via Dashboard!');
+        }
+      } catch (error) {
+        console.error("❌ Backend fetch failed, falling back to local storage", error);
+
+        // Fallback to Local Mock Data ONLY if backend fails
         const localProducts = Storage.getProducts();
         if (localProducts.length > 0) {
+          console.log('📦 Using local storage products as fallback');
           setProducts(localProducts);
         }
       }
@@ -83,23 +90,29 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const toggleCart = () => setIsCartOpen(!isCartOpen);
 
-  const placeOrder = async (customer: { name: string; email: string; address: string }) => {
-    try {
-      if (isBackendConnected) {
-        // Create order in backend
-        await createOrder(cart, customer);
-        // If successful, we can clear the cart and show success
-        // Note: In a real payment flow, we'd redirect to a payment URL returned by the backend
+  const placeOrder = async (customer: { name: string; email: string; phone: string; address: string }) => {
+    if (isBackendConnected) {
+      // Create order in backend
+      // If this fails, it will throw an error which should be caught by the caller
+      await createOrder(cart, customer);
+      clearCart();
+
+      // Refresh products to get updated stock
+      try {
+        const updatedProducts = await fetchProducts();
+        setProducts(updatedProducts);
+      } catch (error) {
+        console.error('Failed to refresh products after order:', error);
       }
-    } catch (error) {
-      console.error("Failed to place order in backend, falling back to local", error);
+      return;
     }
 
-    // Default / Fallback Local Order Logic (also used for UI feedback)
+    // Default / Fallback Local Order Logic
     const newOrder: Order = {
       id: Math.random().toString(36).substr(2, 9).toUpperCase(),
       customerName: customer.name,
       customerEmail: customer.email,
+      customerPhone: customer.phone,
       items: [...cart],
       total: cart.reduce((acc, item) => acc + item.variantPrice * item.quantity, 0),
       status: 'pending',

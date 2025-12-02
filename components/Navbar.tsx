@@ -9,34 +9,48 @@ const Navbar: React.FC = () => {
 
   return (
     <>
-      <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-gray-100">
-        <div className="max-w-[1920px] mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
-          
+      <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm">
+        <div className="max-w-[1920px] mx-auto px-4 md:px-8 h-20 flex items-center justify-between">
+
           {/* Mobile Menu / Left */}
-          <div className="flex items-center gap-4 w-1/3">
-            <button className="md:hidden">
+          <div className="flex items-center gap-6 w-1/3">
+            <button className="md:hidden hover:scale-110 transition-transform">
               <Menu size={24} />
             </button>
-            <div className="hidden md:flex gap-6 text-sm font-bold tracking-tight uppercase">
-              <Link to="/" className="hover:opacity-50 transition-opacity">Home</Link>
-              <Link to="/shop" className="hover:opacity-50 transition-opacity">Shop</Link>
-              <Link to="/about" className="hover:opacity-50 transition-opacity">About</Link>
+            <div className="hidden md:flex gap-8 text-sm font-bold tracking-tight uppercase">
+              <Link to="/" className="relative group">
+                <span className="group-hover:gradient-text transition-all">Home</span>
+                <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-purple-600 to-pink-600 group-hover:w-full transition-all duration-300" />
+              </Link>
+              <Link to="/shop" className="relative group">
+                <span className="group-hover:gradient-text transition-all">Shop</span>
+                <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-purple-600 to-pink-600 group-hover:w-full transition-all duration-300" />
+              </Link>
+              <Link to="/about" className="relative group">
+                <span className="group-hover:gradient-text transition-all">About</span>
+                <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-purple-600 to-pink-600 group-hover:w-full transition-all duration-300" />
+              </Link>
             </div>
           </div>
 
           {/* Logo / Center */}
           <div className="w-1/3 flex justify-center">
-            <Link to="/" className="text-2xl md:text-3xl font-black tracking-tighter uppercase italic">
-              WOMA<span className="text-gray-400">SPORT</span>
+            <Link to="/" className="text-2xl md:text-3xl font-black tracking-tighter uppercase hover:scale-105 transition-transform">
+              <span className="gradient-text">WOMA</span><span className="text-gray-400">SPORT</span>
             </Link>
           </div>
 
           {/* Icons / Right */}
           <div className="flex items-center justify-end gap-6 w-1/3">
-            <button className="relative" onClick={toggleCart}>
-              <ShoppingBag size={24} strokeWidth={1.5} />
+            <button
+              className="relative group"
+              onClick={toggleCart}
+            >
+              <div className="group-hover:scale-110 transition-transform">
+                <ShoppingBag size={24} strokeWidth={1.5} />
+              </div>
               {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-black text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
+                <span className="absolute -top-2 -right-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] min-w-[20px] h-5 flex items-center justify-center rounded-full font-bold px-1.5 animate-pulse">
                   {itemCount}
                 </span>
               )}

@@ -26,7 +26,25 @@ class APIClient {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('API Error:', response.status, errorText);
-        throw new Error(`API Error: ${response.statusText}`);
+
+        try {
+          const errorJson = JSON.parse(errorText);
+          // Handle DRF validation errors
+          if (Array.isArray(errorJson)) {
+            throw new Error(errorJson.join(', '));
+          } else if (typeof errorJson === 'object') {
+            // Flatten object values (e.g. {"stock": ["Not enough stock"]})
+            const messages = Object.entries(errorJson)
+              .map(([key, val]) => `${key}: ${Array.isArray(val) ? val.join(', ') : val}`)
+              .join('\n');
+            throw new Error(messages);
+          }
+          throw new Error(errorText);
+        } catch (e) {
+          // If parsing failed or it was already an error object
+          if (e instanceof Error && e.message !== errorText && !e.message.includes('JSON')) throw e;
+          throw new Error(`API Error: ${response.status} ${response.statusText}`);
+        }
       }
 
       return await response.json();
@@ -57,6 +75,27 @@ class APIClient {
       body: JSON.stringify(orderData),
     });
   }
+
+  // Admin: Get all orders
+  async getOrders(): Promise<any> {
+    return this.request('/orders/');
+  }
+
+  // Admin: Update order status
+  async patchOrderStatus(orderId: string, status: string): Promise<any> {
+    return this.request(`/orders/${orderId}/`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  // Admin: Create product
+  async createProduct(productData: any): Promise<any> {
+    return this.request('/products/', {
+      method: 'POST',
+      body: JSON.stringify(productData),
+    });
+  }
 }
 
 export const apiClient = new APIClient(API_BASE_URL);
@@ -64,14 +103,21 @@ export const apiClient = new APIClient(API_BASE_URL);
 // Fetch products from Django backend
 export const fetchProducts = async (): Promise<Product[]> => {
   try {
+    console.log('🌐 API: Fetching products from:', API_BASE_URL);
+
     // 1. Get the list of products
     const response = await apiClient.getProducts();
+    console.log('📡 API Response:', response);
+
     const productList = response.results || response;
+    console.log('📋 Product list:', productList);
 
     if (!productList || productList.length === 0) {
-      console.log('No products found in backend');
+      console.warn('⚠️ No products found in backend response');
       return [];
     }
+
+    console.log(`✅ Found ${productList.length} products in backend`);
 
     // 2. Fetch full details for each product to get variations
     // We use Promise.all to fetch them in parallel
@@ -99,11 +145,13 @@ export const fetchProducts = async (): Promise<Product[]> => {
         title: variation.name || variation.display_name || `${variation.attributes_display || 'Variant'}`,
         price: parseFloat(variation.final_price || variation.price_adjustment || product.price),
         image: variation.images?.[0]?.image_url || product.image_url,
+        color: variation.color_hex, // Add color hex code
         selectedOptions: Object.entries(variation.attributes || {}).map(([name, value]) => ({
           name,
           value: String(value)
         })),
         availableForSale: (variation.stock_quantity || 0) > 0,
+        stock_quantity: variation.stock_quantity || 0,
       }));
 
       // If no variations, create a default variant
@@ -118,26 +166,37 @@ export const fetchProducts = async (): Promise<Product[]> => {
         });
       }
 
-      // Extract unique options from variations
+      // Filter out unavailable variants
+      const availableVariants = variants.filter((v: any) => v.availableForSale);
+
+      // Extract unique options from AVAILABLE variations
       const options: any[] = [];
-      if (variations.length > 0) {
-        // Get all attribute keys
-        const allKeys = new Set<string>();
-        variations.forEach((v: any) => {
-          if (v.attributes) {
-            Object.keys(v.attributes).forEach(k => allKeys.add(k));
-          }
+      if (availableVariants.length > 0) {
+        // Get all attribute keys and normalize them
+        const keyMap = new Map<string, string>(); // normalized -> original (display name)
+
+        availableVariants.forEach((v: any) => {
+          v.selectedOptions.forEach((opt: any) => {
+            const k = opt.name;
+            const normalized = k.trim().toLowerCase();
+            if (!keyMap.has(normalized)) {
+              keyMap.set(normalized, k);
+            } else if (k === 'Color' || k === 'Size') {
+              keyMap.set(normalized, k);
+            }
+          });
         });
 
-        allKeys.forEach(key => {
+        keyMap.forEach((originalKey, normalizedKey) => {
           const values = new Set<string>();
-          variations.forEach((v: any) => {
-            if (v.attributes && v.attributes[key]) {
-              values.add(String(v.attributes[key]));
+          availableVariants.forEach((v: any) => {
+            const opt = v.selectedOptions.find((o: any) => o.name.trim().toLowerCase() === normalizedKey);
+            if (opt) {
+              values.add(opt.value);
             }
           });
           if (values.size > 0) {
-            options.push({ name: key, values: Array.from(values) });
+            options.push({ name: originalKey, values: Array.from(values) });
           }
         });
       }
@@ -151,7 +210,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
         category: product.category_name || product.category || 'Uncategorized',
         isNew: product.is_active !== false,
         options: options,
-        variants: variants,
+        variants: availableVariants, // Only return available variants
       };
     });
   } catch (error) {
@@ -172,12 +231,13 @@ export const fetchCategories = async (): Promise<any[]> => {
 };
 
 // Create order in Django backend
-export const createOrder = async (cartItems: CartItem[], customer: { name: string; email: string; address: string }): Promise<any> => {
+export const createOrder = async (cartItems: CartItem[], customer: { name: string; email: string; phone: string; address: string }): Promise<any> => {
   try {
     // Transform cart items to match your backend's expected format
     const orderData = {
       customer_name: customer.name,
       customer_email: customer.email,
+      customer_phone: customer.phone,
       shipping_address: customer.address,
       items: cartItems.map(item => ({
         product_id: item.id, // This might need to be the UUID if backend expects UUID
@@ -199,4 +259,45 @@ export const createOrder = async (cartItems: CartItem[], customer: { name: strin
 // Legacy function for compatibility
 export const createCheckout = async (cartItems: CartItem[]): Promise<string | null> => {
   return null;
+};
+
+// ============================================
+// ADMIN API FUNCTIONS
+// ============================================
+
+// Fetch all orders (admin)
+export const fetchOrders = async (): Promise<any[]> => {
+  try {
+    const response = await apiClient.getOrders();
+    return response.results || response;
+  } catch (error) {
+    console.error('Failed to fetch orders:', error);
+    return [];
+  }
+};
+
+// Update order status (admin)
+export const updateOrderStatus = async (orderId: string, status: string): Promise<any> => {
+  try {
+    return await apiClient.patchOrderStatus(orderId, status);
+  } catch (error) {
+    console.error('Failed to update order status:', error);
+    throw error;
+  }
+};
+
+// Create product (admin)
+export const createProduct = async (productData: {
+  name: string;
+  price: number;
+  category: string;
+  description: string;
+  image_url?: string;
+}): Promise<any> => {
+  try {
+    return await apiClient.createProduct(productData);
+  } catch (error) {
+    console.error('Failed to create product:', error);
+    throw error;
+  }
 };
