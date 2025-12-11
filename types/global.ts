@@ -52,7 +52,7 @@ export interface StoreContextType {
   addToCart: (product: Product, variant: ProductVariant, quantity?: number) => void;
   removeFromCart: (variantId: string) => void;
   clearCart: () => void;
-  placeOrder: (customer: { name: string; email: string; phone: string; address: string }) => Promise<void>;
+  placeOrder: (customer: { name: string; email: string; phone: string; address: string }) => Promise<any>;
   updateOrderStatus: (orderId: string, status: Order['status']) => void;
   isCartOpen: boolean;
   toggleCart: () => void;

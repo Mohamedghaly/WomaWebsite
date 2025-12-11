@@ -31,7 +31,7 @@ export const generateProductDescription = async (
       contents: prompt,
     });
 
-    return response.text.trim();
+    return response.text?.trim() || 'Generated content unavailable';
   } catch (error) {
     console.error("Error generating description:", error);
     return "Could not generate description at this time.";

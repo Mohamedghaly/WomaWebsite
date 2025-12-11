@@ -1,0 +1,72 @@
+{
+    "nav": {
+        "home": "Home",
+        "shop": "Shop",
+        "about": "About"
+    },
+    "hero": {
+        "subtitle": "Performance meets style. Engineered for the relentless.",
+        "cta_primary": "Shop The Drop",
+        "cta_secondary": "Discover More",
+        "scroll": "Scroll"
+    },
+    "marquee": "🔥 Woma • Sportswear • High Performance • Worldwide Shipping • No Limits •",
+    "trending": {
+        "title_first": "Trending",
+        "title_second": "Gear",
+        "subtitle": "Curated picks for peak performance",
+        "view_all": "View All",
+        "currency": "EGP",
+        "quick_view": "Quick View",
+        "new_badge": "New"
+    },
+    "innovation": {
+        "badge": "Innovation",
+        "title_first": "Engineered",
+        "title_second": "For Motion.",
+        "description": "We design gear that moves with you. From the squat rack to the streets, Woma delivers uncompromising performance and style.",
+        "cta_tech": "Our Technology",
+        "cta_shop": "Shop Now",
+        "stats_athletes": "Happy Athletes",
+        "stats_performance": "Performance"
+    },
+    "trust": {
+        "shipping": "Free Shipping",
+        "shipping_desc": "On orders over EGP 500",
+        "returns": "Easy Returns",
+        "returns_desc": "30-day return policy",
+        "delivery": "Fast Delivery",
+        "delivery_desc": "2-5 business days",
+        "secure": "Secure Payment",
+        "secure_desc": "100% protected"
+    },
+    "cart": {
+        "title": "Your Cart",
+        "empty_title": "Your cart is empty",
+        "empty_desc": "Add some items to get started!",
+        "qty": "Qty",
+        "remove": "Remove",
+        "total": "Total",
+        "checkout": "Checkout",
+        "checkout_details": "Checkout Details",
+        "placeholder_name": "Full Name",
+        "placeholder_email": "Email Address",
+        "placeholder_phone": "Phone Number",
+        "placeholder_address": "Shipping Address (Street, City, Building, etc.)",
+        "back": "Back",
+        "confirm": "Confirm Order",
+        "success_message": "Order placed successfuly with id: #{{id}} and we will contact with you soon",
+        "error_message": "Failed to place order"
+    },
+    "footer": {
+        "tagline": "Engineered for performance. Designed for life. Redefining athletic wear for the modern athlete.",
+        "quick_links": "Quick Links",
+        "legal": "Legal",
+        "rights": "All rights reserved.",
+        "connect": "Connect",
+        "privacy": "Privacy Policy",
+        "terms": "Terms of Service",
+        "returns_policy": "Returns Policy",
+        "contact": "Contact"
+    }
+}

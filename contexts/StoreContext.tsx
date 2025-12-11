@@ -94,7 +94,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (isBackendConnected) {
       // Create order in backend
       // If this fails, it will throw an error which should be caught by the caller
-      await createOrder(cart, customer);
+      const order = await createOrder(cart, customer);
       clearCart();
 
       // Refresh products to get updated stock
@@ -104,7 +104,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       } catch (error) {
         console.error('Failed to refresh products after order:', error);
       }
-      return;
+      return order;
     }
 
     // Default / Fallback Local Order Logic

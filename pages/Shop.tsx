@@ -158,8 +158,8 @@ const Shop: React.FC = () => {
               key={cat}
               onClick={() => setFilterCategory(cat)}
               className={`text-xs font-bold uppercase px-5 py-2.5 rounded-full transition-all duration-300 ${filterCategory === cat
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg scale-105'
-                : 'bg-white border border-gray-200 hover:border-purple-400 hover:scale-105 text-gray-700'
+                ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg scale-105'
+                : 'bg-white border border-gray-200 hover:border-primary hover:scale-105 text-gray-700'
                 }`}
             >
               {cat}
@@ -205,7 +205,7 @@ const Shop: React.FC = () => {
               </h3>
               <div className="flex items-center justify-between">
                 <p className="text-gray-600 font-mono text-sm font-semibold">EGP {product.price}</p>
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-300">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-300">
                   <ArrowRight size={14} className="text-white" />
                 </div>
               </div>
@@ -242,8 +242,8 @@ const Shop: React.FC = () => {
             {/* Info Side */}
             <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-between overflow-y-auto">
               <div>
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-100 to-pink-100 mb-4">
-                  <span className="text-xs font-bold uppercase tracking-widest bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-50 mb-4">
+                  <span className="text-xs font-bold uppercase tracking-widest bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                     {selectedProduct.category}
                   </span>
                 </div>
@@ -258,7 +258,7 @@ const Shop: React.FC = () => {
                   <span className="text-sm text-gray-400 font-medium">Incl. VAT</span>
                 </div>
 
-                <p className="text-sm leading-relaxed text-gray-600 mb-8 pl-4 border-l-4 border-gradient-to-b from-purple-500 to-pink-500" style={{ borderImage: 'linear-gradient(to bottom, #9333ea, #ec4899) 1' }}>
+                <p className="text-sm leading-relaxed text-gray-600 mb-8 pl-4 border-l-4 border-primary">
                   {selectedProduct.description}
                 </p>
 
@@ -299,8 +299,8 @@ const Shop: React.FC = () => {
                               onClick={() => handleOptionChange(option.name, val)}
                               title={val}
                               className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${isSelected
-                                ? 'ring-4 ring-purple-300 border-white scale-110 shadow-lg'
-                                : 'border-gray-300 hover:border-purple-400 hover:scale-105'
+                                ? 'ring-4 ring-primary/30 border-white scale-110 shadow-lg'
+                                : 'border-gray-300 hover:border-primary hover:scale-105'
                                 }`}
                               style={{ backgroundColor: colorHex }}
                             >
@@ -320,8 +320,8 @@ const Shop: React.FC = () => {
                             key={val}
                             onClick={() => handleOptionChange(option.name, val)}
                             className={`min-w-[56px] px-5 h-12 flex items-center justify-center rounded-lg font-bold text-sm transition-all duration-300 ${isSelected
-                              ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg scale-105'
-                              : 'bg-gray-100 border border-gray-200 hover:border-purple-400 hover:scale-105 text-gray-700'
+                              ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg scale-105'
+                              : 'bg-gray-100 border border-gray-200 hover:border-primary hover:scale-105 text-gray-700'
                               }`}
                           >
                             {val}
@@ -338,7 +338,7 @@ const Shop: React.FC = () => {
                   <div className="flex items-center border-2 border-gray-200 rounded-lg w-36 overflow-hidden">
                     <button
                       onClick={() => handleQuantityChange(-1)}
-                      className="w-12 h-12 flex items-center justify-center hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white transition-all duration-300"
+                      className="w-12 h-12 flex items-center justify-center hover:bg-gradient-to-r hover:from-primary hover:to-secondary hover:text-white transition-all duration-300"
                     >
                       <Minus size={16} />
                     </button>
@@ -347,7 +347,7 @@ const Shop: React.FC = () => {
                     </div>
                     <button
                       onClick={() => handleQuantityChange(1)}
-                      className="w-12 h-12 flex items-center justify-center hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white transition-all duration-300"
+                      className="w-12 h-12 flex items-center justify-center hover:bg-gradient-to-r hover:from-primary hover:to-secondary hover:text-white transition-all duration-300"
                     >
                       <Plus size={16} />
                     </button>
@@ -387,7 +387,7 @@ const Shop: React.FC = () => {
                 disabled={!currentVariant || currentVariant.availableForSale === false || (currentVariant && (currentVariant.stock_quantity || 0) < quantity)}
                 className={`group relative w-full min-h-[56px] py-4 font-bold uppercase tracking-widest transition-all duration-300 rounded-xl overflow-hidden ${!currentVariant || currentVariant.availableForSale === false || (currentVariant && (currentVariant.stock_quantity || 0) < quantity)
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:shadow-2xl hover:scale-[1.02]'
+                  : 'bg-gradient-to-r from-primary to-secondary text-white hover:shadow-2xl hover:scale-[1.02]'
                   }`}
               >
                 <span className="relative z-10 flex items-center justify-center gap-2 min-w-[280px]">

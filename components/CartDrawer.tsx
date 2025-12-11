@@ -2,27 +2,32 @@ import React, { useState } from 'react';
 import { X, ShoppingBag } from 'lucide-react';
 import { useStore } from '../contexts/StoreContext';
 
+import { useTranslation } from 'react-i18next';
+
 const CartDrawer: React.FC = () => {
   const { isCartOpen, toggleCart, cart, removeFromCart, placeOrder } = useStore();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', address: '' });
+  const { t } = useTranslation();
 
   if (!isCartOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await placeOrder(formData);
+      const order = await placeOrder(formData);
       setFormData({ name: '', email: '', phone: '', address: '' }); // Reset form data after successful order
       setIsCheckingOut(false);
-      alert("Order placed successfully!");
+      // Fallback for ID if order is undefined or doesn't have ID (though it should)
+      const orderId = order?.id || '#';
+      alert(t('cart.success_message', { id: orderId }));
     } catch (error: any) {
-      alert(error.message || "Failed to place order");
+      alert(error.message || t('cart.error_message'));
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+    <div className="fixed inset-0 z-50 flex justify-end ltr:justify-end rtl:justify-start" style={{ animation: 'fadeIn 0.3s ease-out' }}>
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-md"
@@ -35,8 +40,8 @@ const CartDrawer: React.FC = () => {
         {/* Header */}
         <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-purple-50 to-pink-50">
           <h2 className="text-2xl font-black uppercase tracking-tighter">
-            <span className="gradient-text">Your Cart</span>
-            <span className="text-gray-400 ml-2">({cart.length})</span>
+            <span className="gradient-text">{t('cart.title')}</span>
+            <span className="text-gray-400 mx-2">({cart.length})</span>
           </h2>
           <button
             onClick={toggleCart}
@@ -53,8 +58,8 @@ const CartDrawer: React.FC = () => {
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
                 <ShoppingBag size={40} className="text-gray-300" />
               </div>
-              <p className="font-bold uppercase tracking-widest text-sm">Your cart is empty</p>
-              <p className="text-xs text-gray-400">Add some items to get started!</p>
+              <p className="font-bold uppercase tracking-widest text-sm">{t('cart.empty_title')}</p>
+              <p className="text-xs text-gray-400">{t('cart.empty_desc')}</p>
             </div>
           ) : (
             cart.map((item, idx) => (
@@ -71,15 +76,15 @@ const CartDrawer: React.FC = () => {
                   <div>
                     <h3 className="font-bold text-sm uppercase leading-tight mb-1">{item.name}</h3>
                     <p className="text-xs text-gray-500 mb-2">{item.variantTitle}</p>
-                    <p className="text-sm font-mono font-bold gradient-text">EGP {item.variantPrice}</p>
+                    <p className="text-sm font-mono font-bold gradient-text">{t('trending.currency')} {item.variantPrice}</p>
                   </div>
                   <div className="flex justify-between items-center mt-2">
-                    <span className="text-xs font-bold bg-gray-100 px-3 py-1 rounded-full">Qty: {item.quantity}</span>
+                    <span className="text-xs font-bold bg-gray-100 px-3 py-1 rounded-full">{t('cart.qty')}: {item.quantity}</span>
                     <button
                       onClick={() => removeFromCart(item.variantId)}
                       className="text-xs font-bold uppercase text-red-500 hover:text-red-700 hover:underline transition-all"
                     >
-                      Remove
+                      {t('cart.remove')}
                     </button>
                   </div>
                 </div>
@@ -94,25 +99,25 @@ const CartDrawer: React.FC = () => {
             {!isCheckingOut ? (
               <>
                 <div className="flex justify-between items-center mb-6 p-4 rounded-xl bg-white border border-gray-200">
-                  <span className="font-bold uppercase tracking-widest text-sm text-gray-600">Total</span>
+                  <span className="font-bold uppercase tracking-widest text-sm text-gray-600">{t('cart.total')}</span>
                   <span className="font-mono text-2xl font-black gradient-text">
-                    EGP {cart.reduce((acc, item) => acc + item.variantPrice * item.quantity, 0).toFixed(2)}
+                    {t('trending.currency')} {cart.reduce((acc, item) => acc + item.variantPrice * item.quantity, 0).toFixed(2)}
                   </span>
                 </div>
                 <button
                   onClick={() => setIsCheckingOut(true)}
                   className="group relative w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 font-bold uppercase tracking-widest hover:shadow-2xl transition-all duration-300 rounded-xl overflow-hidden hover:scale-[1.02]"
                 >
-                  <span className="relative z-10">Checkout</span>
-                  <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                  <span className="relative z-10">{t('cart.checkout')}</span>
+                  <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 rtl:skew-x-12 rtl:translate-x-full rtl:group-hover:-translate-x-full" />
                 </button>
               </>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4" style={{ animation: 'slideUp 0.3s ease-out' }}>
-                <h3 className="font-black uppercase tracking-widest text-base mb-6 gradient-text">Checkout Details</h3>
+                <h3 className="font-black uppercase tracking-widest text-base mb-6 gradient-text">{t('cart.checkout_details')}</h3>
                 <input
                   type="text"
-                  placeholder="Full Name"
+                  placeholder={t('cart.placeholder_name')}
                   required
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
@@ -120,7 +125,7 @@ const CartDrawer: React.FC = () => {
                 />
                 <input
                   type="email"
-                  placeholder="Email Address"
+                  placeholder={t('cart.placeholder_email')}
                   required
                   value={formData.email}
                   onChange={e => setFormData({ ...formData, email: e.target.value })}
@@ -128,14 +133,14 @@ const CartDrawer: React.FC = () => {
                 />
                 <input
                   type="tel"
-                  placeholder="Phone Number"
+                  placeholder={t('cart.placeholder_phone')}
                   required
                   value={formData.phone}
                   onChange={e => setFormData({ ...formData, phone: e.target.value })}
                   className="w-full p-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-100 text-sm transition-all duration-300"
                 />
                 <textarea
-                  placeholder="Shipping Address (Street, City, Building, etc.)"
+                  placeholder={t('cart.placeholder_address')}
                   required
                   value={formData.address}
                   onChange={e => setFormData({ ...formData, address: e.target.value })}
@@ -147,14 +152,14 @@ const CartDrawer: React.FC = () => {
                     onClick={() => setIsCheckingOut(false)}
                     className="w-1/2 border-2 border-gray-300 py-3 font-bold uppercase text-xs rounded-xl hover:bg-gray-50 transition-all duration-300"
                   >
-                    Back
+                    {t('cart.back')}
                   </button>
                   <button
                     type="submit"
                     className="group relative w-1/2 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 font-bold uppercase text-xs rounded-xl hover:shadow-xl transition-all duration-300 overflow-hidden hover:scale-105"
                   >
-                    <span className="relative z-10">Confirm Order</span>
-                    <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                    <span className="relative z-10">{t('cart.confirm')}</span>
+                    <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 rtl:skew-x-12 rtl:translate-x-full rtl:group-hover:-translate-x-full" />
                   </button>
                 </div>
               </form>
